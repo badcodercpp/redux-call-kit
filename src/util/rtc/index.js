@@ -25,19 +25,14 @@ export const sendAnswerToPeer = (answer, connection, rtcCalleeNumber) => {
     connection.emit('exchange',exchangePayload)
 }
 
-export const startCall = (actions,onIceCandidateCallback) => {
+export const startCall = (actions,createOfferCallback) => {
     actions.getSocketConnection().then(connection => {
         actions.getOwnStream().then(stream => {
             const local={enable:true,stream:stream};
             const remote = {enable:true,stream:null}
             actions.initStream(local, remote).then(ok => {
-                actions.onIceCandidate(connection, this._on_ice_candidate_cb).then( (c, s) => {
-                    actions.createOffer(connection).then( (offer, sc)=>{
-                        this._create_offer_cb(offer,sc)
-                    } )
-                    .catch( e => {
-                        console.error(e)
-                    } )
+                actions.createOffer(connection).then( (offer, sc)=>{
+                    createOfferCallback(offer,sc)
                 } )
                 .catch( e => {
                     console.error(e)
@@ -50,13 +45,21 @@ export const startCall = (actions,onIceCandidateCallback) => {
         .catch( e => {
             console.error(e)
         } )
-        
     })
-    .catch( e => {
-        console.error(e)
-    } )
 }
 
-export const makePeerAvailableForCall = () => {
-    
+export const makePeerAvailableForCall = (actions,onConnectCallback, onIceCandidateCallback) => {
+    actions.socketConnector(true).then( connection => {
+        onConnectCallback(connection)
+        actions.onIceCandidate(connection, onIceCandidateCallback).then( (c, s) => {
+            
+        } )
+        .catch( e => {
+            console.error(e)
+        } )
+        const local={enable:false,stream:null};
+        const remote = {enable:true,stream:null}
+        actions.initStream(local, remote).then(ok => {
+        })
+    } )
 }
